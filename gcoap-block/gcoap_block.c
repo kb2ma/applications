@@ -10,7 +10,7 @@
  * @{
  *
  * @file
- * @brief       gcoap block server support
+ * @brief       gcoap block server handler example
  *
  * @author      Ken Bannister <kb2ma@runbox.com>
  *
