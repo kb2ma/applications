@@ -27,9 +27,11 @@
 static msg_t _main_msg_queue[MAIN_QUEUE_SIZE];
 
 extern int block_get_cmd(int argc, char **argv);
+extern int block_post_cmd(int argc, char **argv);
 
 static const shell_command_t shell_commands[] = {
     { "get", "Block2 GET", block_get_cmd },
+    { "post", "Block1 POST", block_post_cmd },
     { NULL, NULL, NULL }
 };
 
