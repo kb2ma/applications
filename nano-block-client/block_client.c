@@ -127,7 +127,7 @@ int block_get_cmd(int argc, char **argv)
         goto error;
     }
 
-    coap_block_init(&block, 0, 32, 0);
+    coap_block_object_init(&block, 0, 32, 0);
 
     if (!_init_remote(&remote, argv[1], argv[2])) {
         goto error;
@@ -226,7 +226,8 @@ int block_post_cmd(int argc, char **argv)
             _print_response(&pdu);
         }
 
-    } while (slicer.cur > slicer.end);
+    } while ((coap_get_code_class(&pdu) == COAP_CLASS_SUCCESS)
+             && (slicer.cur > slicer.end));
 
     return 0;
 
