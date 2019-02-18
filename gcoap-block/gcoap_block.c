@@ -33,11 +33,13 @@
 static ssize_t _stats_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx);
 static ssize_t _riot_board_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx);
 static ssize_t _sha256_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx);
+static ssize_t _riot_block2_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx);
 
 /* CoAP resources */
 static const coap_resource_t _resources[] = {
     { "/cli/stats", COAP_GET | COAP_PUT, _stats_handler, NULL },
     { "/riot/board", COAP_GET, _riot_board_handler, NULL },
+    { "/riot/ver", COAP_GET, _riot_block2_handler, NULL },
     { "/sha256", COAP_POST, _sha256_handler, NULL },
 };
 
@@ -49,6 +51,41 @@ static gcoap_listener_t _listener = {
 
 /* Counts requests sent by CLI. */
 static uint16_t req_count = 0;
+
+static const uint8_t block2_intro[] = "This is RIOT (Version: ";
+static const uint8_t block2_board[] = " running on a ";
+static const uint8_t block2_mcu[] = " board with a ";
+
+static ssize_t _riot_block2_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
+{
+    (void)ctx;
+    coap_block_slicer_t slicer;
+    coap_block2_init(pdu, &slicer);
+
+    gcoap_resp_init(pdu, buf, len, COAP_CODE_CONTENT);
+    coap_opt_add_format(pdu, COAP_FORMAT_TEXT);
+    coap_opt_add_block2(pdu, &slicer, 1);
+    ssize_t plen = coap_opt_finish(pdu, COAP_OPT_FINISH_PAYLOAD);
+
+    /* Add actual content */
+    plen += coap_blockwise_put_bytes(&slicer, buf+plen, block2_intro, sizeof(block2_intro)-1);
+    plen += coap_blockwise_put_bytes(&slicer, buf+plen, (uint8_t*)RIOT_VERSION, strlen(RIOT_VERSION));
+    plen += coap_blockwise_put_char(&slicer, buf+plen, ')');
+    plen += coap_blockwise_put_bytes(&slicer, buf+plen, block2_board, sizeof(block2_board)-1);
+    plen += coap_blockwise_put_bytes(&slicer, buf+plen, (uint8_t*)RIOT_BOARD, strlen(RIOT_BOARD));
+    plen += coap_blockwise_put_bytes(&slicer, buf+plen, block2_mcu, sizeof(block2_mcu)-1);
+    plen += coap_blockwise_put_bytes(&slicer, buf+plen, (uint8_t*)RIOT_MCU, strlen(RIOT_MCU));
+    /* To demonstrate individual chars */
+    plen += coap_blockwise_put_char(&slicer, buf+plen, ' ');
+    plen += coap_blockwise_put_char(&slicer, buf+plen, 'M');
+    plen += coap_blockwise_put_char(&slicer, buf+plen, 'C');
+    plen += coap_blockwise_put_char(&slicer, buf+plen, 'U');
+    plen += coap_blockwise_put_char(&slicer, buf+plen, '.');
+
+    coap_block2_finish(&slicer);
+
+    return plen;
+}
 
 /*
  * Server callback for /cli/stats. Accepts either a GET or a PUT.
@@ -134,7 +171,7 @@ static ssize_t _sha256_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *
     gcoap_resp_init(pdu, buf, len, resp_code);
 
     if (blockwise) {
-        coap_opt_add_block1(pdu, &block1);
+        coap_opt_add_block1_control(pdu, &block1);
     }
 
     /* include digest if done, otherwise response code above asks for next block */
