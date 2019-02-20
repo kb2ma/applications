@@ -28,17 +28,11 @@
 #define ENABLE_DEBUG (0)
 #include "debug.h"
 
-#define COAP_CODE_CONTINUE     ((2 << 5) | 31)
-
-static ssize_t _stats_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx);
-static ssize_t _riot_board_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx);
 static ssize_t _sha256_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx);
 static ssize_t _riot_block2_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx);
 
 /* CoAP resources */
 static const coap_resource_t _resources[] = {
-    { "/cli/stats", COAP_GET | COAP_PUT, _stats_handler, NULL },
-    { "/riot/board", COAP_GET, _riot_board_handler, NULL },
     { "/riot/ver", COAP_GET, _riot_block2_handler, NULL },
     { "/sha256", COAP_POST, _sha256_handler, NULL },
 };
@@ -49,9 +43,7 @@ static gcoap_listener_t _listener = {
     NULL
 };
 
-/* Counts requests sent by CLI. */
-static uint16_t req_count = 0;
-
+/* Constants for /riot/ver. */
 static const uint8_t block2_intro[] = "This is RIOT (Version: ";
 static const uint8_t block2_board[] = " running on a ";
 static const uint8_t block2_mcu[] = " board with a ";
@@ -88,56 +80,6 @@ static ssize_t _riot_block2_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, v
 }
 
 /*
- * Server callback for /cli/stats. Accepts either a GET or a PUT.
- *
- * GET: Returns the count of packets sent by the CLI.
- * PUT: Updates the count of packets. Rejects an obviously bad request, but
- *      allows any two byte value for example purposes. Semantically, the only
- *      valid action is to set the value to 0.
- */
-static ssize_t _stats_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx)
-{
-    (void)ctx;
-
-    /* read coap method type in packet */
-    unsigned method_flag = coap_method2flag(coap_get_code_detail(pdu));
-
-    switch(method_flag) {
-        case COAP_GET:
-            gcoap_resp_init(pdu, buf, len, COAP_CODE_CONTENT);
-
-            /* write the response buffer with the request count value */
-            size_t payload_len = fmt_u16_dec((char *)pdu->payload, req_count);
-
-            return gcoap_finish(pdu, payload_len, COAP_FORMAT_TEXT);
-
-        case COAP_PUT:
-            /* convert the payload to an integer and update the internal
-               value */
-            if (pdu->payload_len <= 5) {
-                char payload[6] = { 0 };
-                memcpy(payload, (char *)pdu->payload, pdu->payload_len);
-                req_count = (uint16_t)strtoul(payload, NULL, 10);
-                return gcoap_response(pdu, buf, len, COAP_CODE_CHANGED);
-            }
-            else {
-                return gcoap_response(pdu, buf, len, COAP_CODE_BAD_REQUEST);
-            }
-    }
-
-    return 0;
-}
-
-static ssize_t _riot_board_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, void *ctx)
-{
-    (void)ctx;
-    gcoap_resp_init(pdu, buf, len, COAP_CODE_CONTENT);
-    /* write the RIOT board name in the response buffer */
-    memcpy(pdu->payload, RIOT_BOARD, strlen(RIOT_BOARD));
-    return gcoap_finish(pdu, strlen(RIOT_BOARD), COAP_FORMAT_TEXT);
-}
-
-/*
  * Uses block1 POSTs to generate an sha256 digest. */
 static ssize_t _sha256_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx)
 {
@@ -170,6 +112,9 @@ static ssize_t _sha256_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *
     /* start response */
     gcoap_resp_init(pdu, buf, len, resp_code);
 
+    if (!blockwise || !block1.more) {
+        coap_opt_add_format(pdu, COAP_FORMAT_TEXT);
+    }
     if (blockwise) {
         coap_opt_add_block1_control(pdu, &block1);
     }
