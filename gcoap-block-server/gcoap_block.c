@@ -98,7 +98,7 @@ static ssize_t _sha256_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *
             (unsigned)block1.offset, pdu->payload_len, blockwise, block1.more);
 
     /* initialize sha256 calculation and add payload bytes */
-    if (block1.offset == 0) {
+    if (block1.blknum == 0) {
         puts("_sha256_handler: init");
         sha256_init(&sha256);
     }
@@ -112,6 +112,7 @@ static ssize_t _sha256_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *
     /* start response */
     gcoap_resp_init(pdu, buf, len, resp_code);
 
+    /* has payload */
     if (!blockwise || !block1.more) {
         coap_opt_add_format(pdu, COAP_FORMAT_TEXT);
     }
