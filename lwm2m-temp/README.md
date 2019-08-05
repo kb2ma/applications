@@ -1,0 +1,1 @@
+This application reads a SAUL temperature sensor, and provides a LwM2M temperature object to publish its data.
