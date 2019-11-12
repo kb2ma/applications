@@ -16,8 +16,10 @@ fd00:bbbb::2/64 (in Makefile)
    |
 Leshan node
 workstation (Linux)
-fd00:bbbb::1/64 (in setup_tap.sh)
+fd00:bbbb::1/64 (in start_native.sh)
 ```
+
+Must manually run `start_native.sh` to setup TAP, and `stop_native.sh` to tear it down.
 
 ### Single board client via USB (local networking)
 Setup for a single physical board client node connected via USB/TAP to the server node. I use a samr21-xpro. Build with `Makefile.ula`.
@@ -30,8 +32,9 @@ fd00:bbbb::2/64 (via CLI)
    |
 Leshan node
 workstation (Linux)
-fd00:bbbb::1/64 (in setup_ula.sh)
+fd00:bbbb::1/64 (in start_ula.sh)
 ```
+`start_ula.sh` executes automatically when running the `term` target, to setup and teardown the TAP interface.
 
 After running the `term` target on the board, do the following:
 
