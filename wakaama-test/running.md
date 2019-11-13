@@ -21,6 +21,13 @@ fd00:bbbb::1/64 (in setup_native.sh)
 
 Must manually run '`setup_native.sh start`' to setup TAP, and '`setup_native.sh stop`' to tear it down.
 
+After running the `term` target to start the RIOT instance, do the following in its terminal:
+
+```
+   > ifconfig 5 add fd00:bbbb::2/64
+```
+
+
 ### Single board client via USB (local networking)
 Setup for a single physical board client node connected via USB/TAP to the server node. I use a samr21-xpro. Build with `Makefile.ula`.
 ```

@@ -1,3 +1,4 @@
+#!/bin/sh
 # Set up and tear down TAP networking.
 # Must run as superuser.
 
