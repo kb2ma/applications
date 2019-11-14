@@ -70,14 +70,14 @@ routeable IPv6 addr (auto-assigned)
    |
 Leshan node
 cloud instance (Linux)
-routeable cloud address (in setup_ula.sh)
+routeable cloud address (see SERVER_URI below)
 ```
 
 Must define environment variables for `Makefile.inet`:
 ```
 export RIOT_WIFI_SSID="<ssid>"
 export RIOT_WIFI_PASS="<passphrase>"
-export SERVER_URI=\\\"coap://[<server addr>]
+export SERVER_URI=\\\"coap://[<server addr>]\\\"
 
 ```
 
