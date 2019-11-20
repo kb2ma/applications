@@ -70,7 +70,7 @@ USEPKG += wakaama
 CFLAGS += -DLWM2M_CLIENT_MODE
 
 # We override the `make term` command to use ethos
-TERMPROG ?= sudo sh ./start_ula.sh
+TERMPROG ?= sudo sh ./setup_ula.sh
 TERMFLAGS ?= $(PORT) $(TAP) $(IPV6_PREFIX)
 
 # We depend on the ethos host tools to run the border router, we build them
