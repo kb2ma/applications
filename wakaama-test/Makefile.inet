@@ -55,7 +55,7 @@ USEPKG += wakaama
 # Uncomment to enable Wakaama debug log
 #CFLAGS += -DLWM2M_WITH_LOGS
 
-# NOTE: Use wakaama in client mode with bootstrapping enabled
+# NOTE: Use wakaama in client mode
 CFLAGS += -DLWM2M_CLIENT_MODE
 
 ifneq (,$(findstring esp,$(BOARD)))
