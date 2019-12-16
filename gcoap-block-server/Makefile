@@ -35,6 +35,14 @@ USEMODULE += gcoap
 USEMODULE += gnrc_icmpv6_echo
 #USEMODULE += gnrc_rpl
 
+# DTLS configuration
+# Choose which DTLS stack to use
+USEMODULE += tinydtls_sock_dtls
+CFLAGS += -DDTLS_PSK
+# CFLAGS += -DDTLS_ECC
+# Uncomment to enable debug logs when using DTLS
+# CFLAGS += -DDTLS_DEBUG
+
 # Required by handlers
 USEMODULE += fmt
 USEMODULE += hashes

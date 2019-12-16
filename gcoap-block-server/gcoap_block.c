@@ -24,6 +24,22 @@
 #include "fmt.h"
 #include "hashes/sha256.h"
 #include "net/gcoap.h"
+#ifdef MODULE_SOCK_DTLS
+#include "net/credman.h"
+
+#define SOCK_DTLS_GCOAP_TAG (10)
+
+#ifdef DTLS_PSK
+extern const char psk_key[];
+extern const char psk_id[];
+extern const unsigned psk_key_len;
+extern const unsigned psk_id_len;
+#else /* DTLS_PSK */
+extern const unsigned char ecdsa_priv_key[];
+extern const unsigned char ecdsa_pub_key_x[];
+extern const unsigned char ecdsa_pub_key_y[];
+#endif /* DTLS_ECC */
+#endif /* MODULE_SOCK_DTLS */
 
 #define ENABLE_DEBUG (0)
 #include "debug.h"
@@ -159,5 +175,49 @@ int gcoap_cli_cmd(int argc, char **argv)
 
 void gcoap_cli_init(void)
 {
+#ifdef MODULE_SOCK_DTLS
+#ifdef DTLS_PSK
+    credman_credential_t credential = {
+        .type = CREDMAN_TYPE_PSK,
+        .tag = SOCK_DTLS_GCOAP_TAG,
+        .params = {
+            .psk = {
+                .key = { .s = (char *)psk_key, .len = psk_key_len },
+                .id = { .s = (char *)psk_id, .len = psk_id_len },
+            },
+        },
+    };
+#else
+    ecdsa_public_key_t other_pubkeys[] = {
+        { .x = ecdsa_pub_key_x, .y = ecdsa_pub_key_y },
+    };
+
+    credman_credential_t credential = {
+        .type = CREDMAN_TYPE_ECDSA,
+        .tag = SOCK_DTLS_GCOAP_TAG,
+        .params = {
+            .ecdsa = {
+                .private_key = ecdsa_priv_key,
+                .public_key = {
+                    .x = ecdsa_pub_key_x,
+                    .y = ecdsa_pub_key_y,
+                },
+                .client_keys = other_pubkeys,
+                .client_keys_size = ARRAY_SIZE(other_pubkeys),
+            }
+        },
+    };
+#endif /* DTLS_ECC */
+    if (credman_add(&credential) < 0) {
+        puts("gcoap_cli: unable to add credential");
+        return;
+    }
+
+    /* tell gcoap with tag to use */
+    gcoap_set_credential_tag(SOCK_DTLS_GCOAP_TAG);
+    /* start gcoap server */
+    gcoap_init();
+#endif
+
     gcoap_register_listener(&_listener);
 }
