@@ -29,7 +29,8 @@
 #define ENABLE_DEBUG (0)
 #include "debug.h"
 
-static void _resp_handler(unsigned req_state, coap_pkt_t* pdu, sock_udp_ep_t *remote);
+static void _resp_handler(const gcoap_request_memo_t *memo, coap_pkt_t* pdu,
+                          const sock_udp_ep_t *remote);
 
 static const uint8_t block1_text[] = "If one advances confidently in the direction of his dreams...";
 
@@ -43,8 +44,8 @@ static ssize_t _init_remote(sock_udp_ep_t *remote, char *addr_str, char *port_st
     remote->family = AF_INET6;
 
     /* parse for interface */
-    int iface = ipv6_addr_split_iface(addr_str);
-    if (iface == -1) {
+    char *iface = ipv6_addr_split_iface(addr_str);
+    if (!iface) {
         if (gnrc_netif_numof() == 1) {
             /* assign the single interface found in gnrc_netif_numof() */
             remote->netif = (uint16_t)gnrc_netif_iter(NULL)->pid;
@@ -54,11 +55,12 @@ static ssize_t _init_remote(sock_udp_ep_t *remote, char *addr_str, char *port_st
         }
     }
     else {
-        if (gnrc_netif_get_by_pid(iface) == NULL) {
-            puts("client: interface not valid");
+        int pid = atoi(iface);
+        if (gnrc_netif_get_by_pid(pid) == NULL) {
+            puts("gcoap_cli: interface not valid");
             return 0;
         }
-        remote->netif = iface;
+        remote->netif = pid;
     }
 
     /* parse destination address */
@@ -83,7 +85,7 @@ static ssize_t _init_remote(sock_udp_ep_t *remote, char *addr_str, char *port_st
 }
 
 /* Writes and sends next block for /sha256 request. */
-static int _do_block_post(coap_pkt_t *pdu, uint16_t blknum, sock_udp_ep_t *remote)
+static int _do_block_post(coap_pkt_t *pdu, uint16_t blknum, const sock_udp_ep_t *remote)
 {
     coap_block_slicer_t slicer;
     coap_block_slicer_init(&slicer, blknum, 32);
@@ -103,7 +105,7 @@ static int _do_block_post(coap_pkt_t *pdu, uint16_t blknum, sock_udp_ep_t *remot
         printf("client: sending msg ID %u, %u bytes\n\n", coap_get_id(pdu), len);
     }
 
-    ssize_t res = gcoap_req_send2((uint8_t *)pdu->hdr, len, remote, _resp_handler);
+    ssize_t res = gcoap_req_send((uint8_t *)pdu->hdr, len, remote, _resp_handler, NULL);
     if (res < 0) {
         printf("client: msg send failed: %d\n", (int)res);
         return 1;
@@ -112,14 +114,14 @@ static int _do_block_post(coap_pkt_t *pdu, uint16_t blknum, sock_udp_ep_t *remot
 }
 
 /* Response handler for client request to /sha256. */
-static void _resp_handler(unsigned req_state, coap_pkt_t* pdu,
-                          sock_udp_ep_t *remote)
+static void _resp_handler(const gcoap_request_memo_t *memo, coap_pkt_t* pdu,
+                          const sock_udp_ep_t *remote)
 {
-    if (req_state == GCOAP_MEMO_TIMEOUT) {
+    if (memo->state == GCOAP_MEMO_TIMEOUT) {
         printf("gcoap: timeout for msg ID %02u\n", coap_get_id(pdu));
         return;
     }
-    else if (req_state == GCOAP_MEMO_ERR) {
+    else if (memo->state == GCOAP_MEMO_ERR) {
         printf("gcoap: error in response\n");
         return;
     }
