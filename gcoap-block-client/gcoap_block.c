@@ -106,8 +106,8 @@ static int _do_block_post(coap_pkt_t *pdu, uint16_t blknum, const sock_udp_ep_t 
     coap_block_slicer_t slicer;
     coap_block_slicer_init(&slicer, blknum, 32);
 
-    gcoap_req_init(pdu, (uint8_t *)pdu->hdr, GCOAP_PDU_BUF_SIZE, COAP_METHOD_POST,
-                   "/sha256");
+    gcoap_req_init(pdu, (uint8_t *)pdu->hdr, CONFIG_GCOAP_PDU_BUF_SIZE,
+                   COAP_METHOD_POST, "/sha256");
     coap_opt_add_format(pdu, COAP_FORMAT_TEXT);
     coap_opt_add_block1(pdu, &slicer, 1);
     int len = coap_opt_finish(pdu, COAP_OPT_FINISH_PAYLOAD);
@@ -175,7 +175,7 @@ static void _resp_handler(const gcoap_request_memo_t *memo, coap_pkt_t* pdu,
 /* Initial POST request for block based /sha256 resource. */
 static int _block_post_cmd(int argc, char **argv)
 {
-    uint8_t buf[GCOAP_PDU_BUF_SIZE];
+    uint8_t buf[CONFIG_GCOAP_PDU_BUF_SIZE];
     coap_pkt_t pdu;
     sock_udp_ep_t remote;
 
@@ -213,7 +213,7 @@ int gcoap_cli_cmd(int argc, char **argv)
     else if (strcmp(argv[1], "info") == 0) {
         uint8_t open_reqs = gcoap_op_state();
 
-        printf("CoAP server is listening on port %u\n", GCOAP_PORT);
+        printf("CoAP server is listening on port %u\n", CONFIG_GCOAP_PORT);
         printf("CoAP open requests: %u\n", open_reqs);
         return 0;
     }
