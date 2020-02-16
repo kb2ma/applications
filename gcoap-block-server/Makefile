@@ -37,8 +37,8 @@ USEMODULE += gnrc_icmpv6_echo
 
 # DTLS configuration
 # Choose which DTLS stack to use
-USEMODULE += tinydtls_sock_dtls
-CFLAGS += -DDTLS_PSK
+#USEMODULE += tinydtls_sock_dtls
+#CFLAGS += -DDTLS_PSK
 # CFLAGS += -DDTLS_ECC
 # Uncomment to enable debug logs when using DTLS
 # CFLAGS += -DDTLS_DEBUG
